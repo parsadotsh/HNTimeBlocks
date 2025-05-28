@@ -45,16 +45,15 @@ export function StoryList({ selectedBlock, settings }: StoryListProps) {
     };
   };
 
-  const blockInfo = selectedBlockInfo();
-
   if (error) {
+    const errorBlockInfo = selectedBlockInfo();
     return (
       <div className="p-4">
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-sm text-black">{blockInfo.title}</h3>
-              <p className="text-xs text-gray-500">{blockInfo.description}</p>
+              <h3 className="font-bold text-sm text-black">{errorBlockInfo.title}</h3>
+              <p className="text-xs text-gray-500">{errorBlockInfo.description}</p>
             </div>
           </div>
         </div>
@@ -75,13 +74,14 @@ export function StoryList({ selectedBlock, settings }: StoryListProps) {
   }
 
   if (isLoading) {
+    const loadingBlockInfo = selectedBlockInfo();
     return (
       <div className="p-4">
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-sm text-black">{blockInfo.title}</h3>
-              <p className="text-xs text-gray-500">{blockInfo.description}</p>
+              <h3 className="font-bold text-sm text-black">{loadingBlockInfo.title}</h3>
+              <p className="text-xs text-gray-500">{loadingBlockInfo.description}</p>
             </div>
           </div>
         </div>
@@ -111,9 +111,9 @@ export function StoryList({ selectedBlock, settings }: StoryListProps) {
     return true;
   });
 
-  const blockInfo = selectedBlockInfo();
+  const baseBlockInfo = selectedBlockInfo();
   const filteredBlockInfo = {
-    ...blockInfo,
+    ...baseBlockInfo,
     storyCount: filteredStories.length,
     originalCount: stories.length
   };
