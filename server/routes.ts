@@ -65,9 +65,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const startHour = blockStartDate.getUTCHours();
         const endHour = blockEndDate.getUTCHours();
         
-        // Create day label
-        const blockDate = new Date(blockStartDate);
-        const daysDiff = Math.floor((now.getTime() - blockDate.getTime()) / (1000 * 60 * 60 * 24));
+        // Create day label - compare dates properly
+        const todayUTC = new Date(now);
+        todayUTC.setUTCHours(0, 0, 0, 0);
+        
+        const blockDateOnly = new Date(blockStartDate);
+        blockDateOnly.setUTCHours(0, 0, 0, 0);
+        
+        const daysDiff = Math.round((todayUTC.getTime() - blockDateOnly.getTime()) / (1000 * 60 * 60 * 24));
         
         let dayLabel = "";
         if (daysDiff === 0) {
@@ -75,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (daysDiff === 1) {
           dayLabel = "Yesterday";
         } else {
-          dayLabel = blockDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          dayLabel = blockStartDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
         }
         
         const timeLabel = `${startHour.toString().padStart(2, '0')}:00-${endHour.toString().padStart(2, '0')}:00`;
