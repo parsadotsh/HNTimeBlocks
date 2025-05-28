@@ -48,19 +48,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const blocks = [];
       const now = new Date();
-      const utcNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
       
       // Calculate current 6-hour block
-      const currentHour = utcNow.getUTCHours();
-      const currentBlock = Math.floor(currentHour / 6);
+      const currentHour = now.getUTCHours();
+      const currentBlockIndex = Math.floor(currentHour / 6);
       
-      // Generate blocks going back 7 days (28 blocks total)
+      // Generate blocks going back in time (28 blocks = 7 days)
       for (let i = 0; i < 28; i++) {
-        const blockDate = new Date(utcNow);
-        const dayOffset = Math.floor(i / 4);
-        blockDate.setUTCDate(blockDate.getUTCDate() - dayOffset);
+        // Calculate how many 6-hour blocks back we are
+        const totalBlocksBack = i;
         
-        const blockIndex = (currentBlock - (i % 4) + 4) % 4;
+        // Calculate the date and block index
+        const daysBack = Math.floor(totalBlocksBack / 4);
+        const blocksBackInDay = totalBlocksBack % 4;
+        
+        const blockDate = new Date(now);
+        blockDate.setUTCDate(blockDate.getUTCDate() - daysBack);
+        
+        let blockIndex = currentBlockIndex - blocksBackInDay;
+        if (blockIndex < 0) {
+          blockIndex += 4;
+          blockDate.setUTCDate(blockDate.getUTCDate() - 1);
+        }
+        
         const startHour = blockIndex * 6;
         const endHour = startHour + 6;
         
@@ -73,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create label
         let dayLabel = "";
-        const daysDiff = dayOffset;
+        const daysDiff = Math.floor((now.getTime() - blockDate.getTime()) / (1000 * 60 * 60 * 24));
         if (daysDiff === 0) {
           dayLabel = "Today";
         } else if (daysDiff === 1) {
@@ -89,11 +99,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           end: Math.floor(blockEnd.getTime() / 1000),
           label: `${dayLabel} ${timeLabel}`,
           date: blockDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          isRecent: i < 3 // Latest 3 blocks
+          isRecent: i < 3 // Latest 3 blocks (including current incomplete one)
         });
       }
       
-      res.json(blocks.reverse()); // Return in chronological order
+      res.json(blocks.reverse()); // Return in chronological order (oldest first)
     } catch (error) {
       console.error("Error generating time blocks:", error);
       res.status(500).json({ message: "Failed to generate time blocks" });

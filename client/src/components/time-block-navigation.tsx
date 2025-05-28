@@ -65,10 +65,10 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect }: TimeBlockN
           </div>
         </div>
         
-        <div className="relative">
+        <div className="relative overflow-visible">
           <div 
             ref={containerRef}
-            className="flex space-x-2 overflow-x-auto scrollbar-hide pb-3 scroll-smooth"
+            className="flex space-x-2 overflow-x-auto overflow-y-visible scrollbar-hide pb-3 scroll-smooth"
             style={{
               msOverflowStyle: 'none',
               scrollbarWidth: 'none',
