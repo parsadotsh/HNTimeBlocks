@@ -49,27 +49,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const blocks = [];
       const now = new Date();
       
-      // Start from 7 days ago and work forward to now
-      const startDate = new Date(now);
-      startDate.setUTCDate(startDate.getUTCDate() - 7);
-      startDate.setUTCHours(0, 0, 0, 0); // Start from midnight
+      // Calculate the current 6-hour block we're in
+      const currentHour = now.getUTCHours();
+      const currentBlockIndex = Math.floor(currentHour / 6); // 0, 1, 2, or 3
       
-      // Generate all 6-hour blocks from 7 days ago to now
-      const currentTime = now.getTime();
-      let blockStart = startDate.getTime();
-      
-      while (blockStart < currentTime) {
-        const blockStartDate = new Date(blockStart);
-        const blockEndDate = new Date(blockStart + (6 * 60 * 60 * 1000)); // Add 6 hours
+      // Generate blocks going back in time (28 blocks = 7 days * 4 blocks per day)
+      for (let i = 27; i >= 0; i--) { // Start from oldest, go to newest
+        const hoursBack = i * 6;
+        const blockStartTime = new Date(now.getTime() - (hoursBack * 60 * 60 * 1000));
         
-        const startHour = blockStartDate.getUTCHours();
-        const endHour = blockEndDate.getUTCHours();
+        // Round down to the nearest 6-hour boundary
+        const blockHour = Math.floor(blockStartTime.getUTCHours() / 6) * 6;
+        blockStartTime.setUTCHours(blockHour, 0, 0, 0);
         
-        // Create day label - compare dates properly
+        const blockEndTime = new Date(blockStartTime.getTime() + (6 * 60 * 60 * 1000));
+        
+        // Create day label
         const todayUTC = new Date(now);
         todayUTC.setUTCHours(0, 0, 0, 0);
         
-        const blockDateOnly = new Date(blockStartDate);
+        const blockDateOnly = new Date(blockStartTime);
         blockDateOnly.setUTCHours(0, 0, 0, 0);
         
         const daysDiff = Math.round((todayUTC.getTime() - blockDateOnly.getTime()) / (1000 * 60 * 60 * 24));
@@ -80,28 +79,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (daysDiff === 1) {
           dayLabel = "Yesterday";
         } else {
-          dayLabel = blockStartDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          dayLabel = blockStartTime.toLocaleDateString("en-US", { month: "short", day: "numeric" });
         }
         
-        const timeLabel = `${startHour.toString().padStart(2, '0')}:00-${endHour.toString().padStart(2, '0')}:00`;
+        const startHour = blockStartTime.getUTCHours();
+        const endHour = blockEndTime.getUTCHours();
+        const timeLabel = `${startHour.toString().padStart(2, '0')}:00-${endHour === 0 ? '24' : endHour.toString().padStart(2, '0')}:00`;
         
-        // Check if this is a recent block (last 3 blocks chronologically)
-        const blocksFromEnd = Math.floor((currentTime - blockStart) / (6 * 60 * 60 * 1000));
-        const isRecent = blocksFromEnd <= 2;
+        // Check if this is a recent block (last 3 blocks)
+        const isRecent = i <= 2;
         
         blocks.push({
-          start: Math.floor(blockStart / 1000),
-          end: Math.floor(blockEndDate.getTime() / 1000),
+          start: Math.floor(blockStartTime.getTime() / 1000),
+          end: Math.floor(blockEndTime.getTime() / 1000),
           label: `${dayLabel} ${timeLabel}`,
-          date: blockDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          date: blockStartTime.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
           isRecent
         });
-        
-        // Move to next 6-hour block
-        blockStart += (6 * 60 * 60 * 1000);
       }
       
-      res.json(blocks); // Return in chronological order (oldest first)
+      res.json(blocks); // Already in chronological order (oldest first)
     } catch (error) {
       console.error("Error generating time blocks:", error);
       res.status(500).json({ message: "Failed to generate time blocks" });
