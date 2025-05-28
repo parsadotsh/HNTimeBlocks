@@ -49,41 +49,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const blocks = [];
       const now = new Date();
       
-      // Calculate current 6-hour block
-      const currentHour = now.getUTCHours();
-      const currentBlockIndex = Math.floor(currentHour / 6);
+      // Start from 7 days ago and work forward to now
+      const startDate = new Date(now);
+      startDate.setUTCDate(startDate.getUTCDate() - 7);
+      startDate.setUTCHours(0, 0, 0, 0); // Start from midnight
       
-      // Generate blocks going back in time (28 blocks = 7 days)
-      for (let i = 0; i < 28; i++) {
-        // Calculate how many 6-hour blocks back we are
-        const totalBlocksBack = i;
+      // Generate all 6-hour blocks from 7 days ago to now
+      const currentTime = now.getTime();
+      let blockStart = startDate.getTime();
+      
+      while (blockStart < currentTime) {
+        const blockStartDate = new Date(blockStart);
+        const blockEndDate = new Date(blockStart + (6 * 60 * 60 * 1000)); // Add 6 hours
         
-        // Calculate the date and block index
-        const daysBack = Math.floor(totalBlocksBack / 4);
-        const blocksBackInDay = totalBlocksBack % 4;
+        const startHour = blockStartDate.getUTCHours();
+        const endHour = blockEndDate.getUTCHours();
         
-        const blockDate = new Date(now);
-        blockDate.setUTCDate(blockDate.getUTCDate() - daysBack);
-        
-        let blockIndex = currentBlockIndex - blocksBackInDay;
-        if (blockIndex < 0) {
-          blockIndex += 4;
-          blockDate.setUTCDate(blockDate.getUTCDate() - 1);
-        }
-        
-        const startHour = blockIndex * 6;
-        const endHour = startHour + 6;
-        
-        // Calculate actual timestamps
-        const blockStart = new Date(blockDate);
-        blockStart.setUTCHours(startHour, 0, 0, 0);
-        
-        const blockEnd = new Date(blockDate);
-        blockEnd.setUTCHours(endHour, 0, 0, 0);
-        
-        // Create label
-        let dayLabel = "";
+        // Create day label
+        const blockDate = new Date(blockStartDate);
         const daysDiff = Math.floor((now.getTime() - blockDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        let dayLabel = "";
         if (daysDiff === 0) {
           dayLabel = "Today";
         } else if (daysDiff === 1) {
@@ -94,16 +80,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const timeLabel = `${startHour.toString().padStart(2, '0')}:00-${endHour.toString().padStart(2, '0')}:00`;
         
+        // Check if this is a recent block (last 3 blocks chronologically)
+        const blocksFromEnd = Math.floor((currentTime - blockStart) / (6 * 60 * 60 * 1000));
+        const isRecent = blocksFromEnd <= 2;
+        
         blocks.push({
-          start: Math.floor(blockStart.getTime() / 1000),
-          end: Math.floor(blockEnd.getTime() / 1000),
+          start: Math.floor(blockStart / 1000),
+          end: Math.floor(blockEndDate.getTime() / 1000),
           label: `${dayLabel} ${timeLabel}`,
           date: blockDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          isRecent: i < 3 // Latest 3 blocks (including current incomplete one)
+          isRecent
         });
+        
+        // Move to next 6-hour block
+        blockStart += (6 * 60 * 60 * 1000);
       }
       
-      res.json(blocks.reverse()); // Return in chronological order (oldest first)
+      res.json(blocks); // Return in chronological order (oldest first)
     } catch (error) {
       console.error("Error generating time blocks:", error);
       res.status(500).json({ message: "Failed to generate time blocks" });
