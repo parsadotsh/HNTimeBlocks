@@ -39,6 +39,10 @@ export function SettingsModal({ settings, onSettingsChange }: SettingsModalProps
     setLocalSettings(prev => ({ ...prev, minPoints: value }));
   };
 
+  const clearFilters = () => {
+    setLocalSettings(prev => ({ ...prev, minRanking: 0, minPoints: 0 }));
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -71,6 +75,14 @@ export function SettingsModal({ settings, onSettingsChange }: SettingsModalProps
                 min="0"
               />
               <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className={localSettings.minRanking === 0 && localSettings.minPoints === 0 ? "bg-orange-100" : ""}
+                >
+                  Clear filters
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

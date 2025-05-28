@@ -13,6 +13,8 @@ interface TimeBlockNavigationProps {
 
 export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: TimeBlockNavigationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(true);
 
   // Generate time blocks client-side
   const timeBlocks = useMemo(() => generateTimeBlocks(), []);
@@ -23,6 +25,7 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
       setTimeout(() => {
         if (containerRef.current) {
           containerRef.current.scrollLeft = containerRef.current.scrollWidth;
+          checkScrollFades();
         }
       }, 100);
       
@@ -33,6 +36,24 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
       }
     }
   }, [timeBlocks, selectedBlock, onBlockSelect]);
+
+  // Check scroll position and update fade visibility
+  const checkScrollFades = () => {
+    if (containerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
+      setShowLeftFade(scrollLeft > 0);
+      setShowRightFade(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  // Add scroll event listener
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollFades);
+      return () => container.removeEventListener('scroll', checkScrollFades);
+    }
+  }, []);
 
   return (
     <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
@@ -48,7 +69,7 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
         <div className="relative overflow-visible">
           <div 
             ref={containerRef}
-            className="flex space-x-2 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth pt-[3.5px] pb-[3.5px]"
+            className="flex space-x-2 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth pt-[3.5px] pb-[3.5px] -mx-4 px-4"
             style={{
               msOverflowStyle: 'none',
               scrollbarWidth: 'none',
@@ -88,8 +109,12 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
           </div>
           
           {/* Scroll indicators */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none"></div>
+          <div 
+            className={`absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none transition-opacity duration-200 ${showRightFade ? 'opacity-100' : 'opacity-0'}`}
+          />
+          <div 
+            className={`absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none transition-opacity duration-200 ${showLeftFade ? 'opacity-100' : 'opacity-0'}`}
+          />
         </div>
       </div>
     </div>
