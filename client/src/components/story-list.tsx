@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Star, RefreshCw } from "lucide-react";
 import type { TimeBlock, StoriesResponse, Story } from "@shared/schema";
 import { getTimeAgo, extractDomain } from "@/lib/time-utils";
+import { fetchStoriesForTimeBlock } from "@/lib/time-blocks";
 
 interface StoryListProps {
   selectedBlock: TimeBlock | null;
@@ -11,7 +12,8 @@ interface StoryListProps {
 
 export function StoryList({ selectedBlock }: StoryListProps) {
   const { data, isLoading, error, refetch } = useQuery<StoriesResponse>({
-    queryKey: ["/api/stories", selectedBlock?.start, selectedBlock?.end],
+    queryKey: ["stories", selectedBlock?.start, selectedBlock?.end],
+    queryFn: () => fetchStoriesForTimeBlock(selectedBlock!.start, selectedBlock!.end),
     enabled: !!selectedBlock,
   });
 

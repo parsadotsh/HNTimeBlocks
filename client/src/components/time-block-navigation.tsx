@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeBlock } from "@shared/schema";
+import { generateTimeBlocks } from "@/lib/time-blocks";
 
 interface TimeBlockNavigationProps {
   selectedBlock: TimeBlock | null;
@@ -12,9 +12,8 @@ interface TimeBlockNavigationProps {
 export function TimeBlockNavigation({ selectedBlock, onBlockSelect }: TimeBlockNavigationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: timeBlocks, isLoading } = useQuery<TimeBlock[]>({
-    queryKey: ["/api/time-blocks"],
-  });
+  // Generate time blocks client-side
+  const timeBlocks = useMemo(() => generateTimeBlocks(), []);
 
   // Auto-scroll to the rightmost position on load
   useEffect(() => {
@@ -32,27 +31,6 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect }: TimeBlockN
       }
     }
   }, [timeBlocks, selectedBlock, onBlockSelect]);
-
-  if (isLoading) {
-    return (
-      <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
-        <div className="p-4 pb-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-black">Time Blocks (UTC)</h2>
-            <div className="text-xs text-gray-500">
-              <span className="inline-block w-3 h-3 bg-red-300 mr-1 rounded"></span>
-              Recent (active)
-            </div>
-          </div>
-          <div className="flex space-x-2 overflow-hidden">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="flex-shrink-0 w-24 h-16 rounded-lg" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
