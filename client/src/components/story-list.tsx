@@ -3,14 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Star, RefreshCw } from "lucide-react";
 import type { TimeBlock, StoriesResponse, Story } from "@shared/schema";
+import type { SettingsConfig } from "@/components/settings-modal";
 import { getTimeAgo, extractDomain } from "@/lib/time-utils";
 import { fetchStoriesForTimeBlock } from "@/lib/time-blocks";
 
 interface StoryListProps {
   selectedBlock: TimeBlock | null;
+  settings: SettingsConfig;
 }
 
-export function StoryList({ selectedBlock }: StoryListProps) {
+export function StoryList({ selectedBlock, settings }: StoryListProps) {
   const { data, isLoading, error, refetch } = useQuery<StoriesResponse>({
     queryKey: ["stories", selectedBlock?.start, selectedBlock?.end],
     queryFn: () => fetchStoriesForTimeBlock(selectedBlock!.start, selectedBlock!.end),
@@ -94,29 +96,71 @@ export function StoryList({ selectedBlock }: StoryListProps) {
 
   const stories = data?.hits || [];
 
+  // Apply filters
+  const filteredStories = stories.filter((story: Story, index: number) => {
+    // Filter by minimum ranking (position in list)
+    if (settings.minRanking > 0 && index + 1 > settings.minRanking) {
+      return false;
+    }
+    
+    // Filter by minimum points
+    if (settings.minPoints > 0 && story.points < settings.minPoints) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  const blockInfo = selectedBlockInfo();
+  const filteredBlockInfo = {
+    ...blockInfo,
+    storyCount: filteredStories.length,
+    originalCount: stories.length
+  };
+
   return (
     <div className="p-4">
       {/* Selected Time Block Info */}
       <div className="mb-4 p-3 bg-gray-50 rounded-lg">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-sm text-black">{blockInfo.title}</h3>
-            <p className="text-xs text-gray-500">{blockInfo.description}</p>
+            <h3 className="font-bold text-sm text-black">{filteredBlockInfo.title}</h3>
+            <p className="text-xs text-gray-500">{filteredBlockInfo.description}</p>
           </div>
           <div className="text-xs text-gray-500">
-            <span className="font-medium">{blockInfo.storyCount}</span> stories
+            <span className="font-medium">{filteredBlockInfo.storyCount}</span> 
+            {filteredBlockInfo.storyCount !== filteredBlockInfo.originalCount && (
+              <span> of {filteredBlockInfo.originalCount}</span>
+            )} stories
+            {(settings.minRanking > 0 || settings.minPoints > 0) && (
+              <div className="text-xs text-orange-600 mt-1">
+                {settings.minRanking > 0 && `Top ${settings.minRanking} only`}
+                {settings.minRanking > 0 && settings.minPoints > 0 && " • "}
+                {settings.minPoints > 0 && `${settings.minPoints}+ points`}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Stories List */}
-      {stories.length === 0 ? (
+      {filteredStories.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <p className="text-sm">No stories found for this time block</p>
+          <p className="text-sm">
+            {stories.length === 0 
+              ? "No stories found for this time block"
+              : "No stories match your filter criteria"
+            }
+          </p>
+          {stories.length > 0 && (
+            <p className="text-xs mt-1 text-gray-400">
+              Try adjusting your filters in settings
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-1">
-          {stories.map((story: Story, index: number) => {
+          {filteredStories.map((story: Story, index: number) => {
             const domain = extractDomain(story.url);
             const timeAgo = getTimeAgo(story.created_at_i);
             

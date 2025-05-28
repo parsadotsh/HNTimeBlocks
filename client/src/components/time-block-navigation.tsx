@@ -2,14 +2,16 @@ import { useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeBlock } from "@shared/schema";
+import type { SettingsConfig } from "@/components/settings-modal";
 import { generateTimeBlocks } from "@/lib/time-blocks";
 
 interface TimeBlockNavigationProps {
   selectedBlock: TimeBlock | null;
   onBlockSelect: (block: TimeBlock) => void;
+  settings: SettingsConfig;
 }
 
-export function TimeBlockNavigation({ selectedBlock, onBlockSelect }: TimeBlockNavigationProps) {
+export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: TimeBlockNavigationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Generate time blocks client-side
@@ -46,7 +48,7 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect }: TimeBlockN
         <div className="relative overflow-visible">
           <div 
             ref={containerRef}
-            className="flex space-x-2 overflow-x-auto overflow-y-visible scrollbar-hide pb-3 scroll-smooth"
+            className="flex space-x-2 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth pt-[3.5px] pb-[3.5px]"
             style={{
               msOverflowStyle: 'none',
               scrollbarWidth: 'none',
@@ -64,14 +66,14 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect }: TimeBlockN
                   size="sm"
                   className={`
                     flex-shrink-0 px-3 py-2 h-auto border-2 text-xs font-medium transition-all hover:scale-105
-                    ${block.isRecent 
+                    ${(block.isRecent && settings.showRecentBlocks)
                       ? 'bg-red-300 border-red-300 text-white hover:bg-red-400' 
                       : isSelected
                         ? 'bg-orange-500 border-orange-500 text-white'
                         : 'bg-white border-gray-300 text-gray-600 hover:border-orange-500 hover:text-orange-500'
                     }
-                    ${isSelected && !block.isRecent ? 'ring-2 ring-orange-300' : ''}
-                    ${isSelected && block.isRecent ? 'ring-2 ring-red-200' : ''}
+                    ${isSelected && !(block.isRecent && settings.showRecentBlocks) ? 'ring-2 ring-orange-300' : ''}
+                    ${isSelected && (block.isRecent && settings.showRecentBlocks) ? 'ring-2 ring-red-200' : ''}
                   `}
                   onClick={() => onBlockSelect(block)}
                 >
