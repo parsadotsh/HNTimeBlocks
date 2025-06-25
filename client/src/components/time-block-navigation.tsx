@@ -42,7 +42,7 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
         hasInitializedRef.current = true;
       }
     }
-  }, [timeBlocks, selectedBlock, onBlockSelect]);
+  }, [timeBlocks, onBlockSelect]);
 
   // Check scroll position and update fade visibility
   const checkScrollFades = () => {
