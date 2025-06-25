@@ -64,8 +64,8 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
 
   return (
     <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
-      <div className="p-4 pb-3">
-        <div className="flex items-center justify-between mb-3">
+      <div className="py-4 pb-3">
+        <div className="flex items-center justify-between mb-3 px-4">
           <h2 className="text-sm font-bold text-black">Time Blocks (UTC)</h2>
           <div className="text-xs text-gray-500">
             <span className="inline-block w-3 h-3 bg-red-300 mr-1 rounded"></span>
@@ -76,7 +76,7 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
         <div className="relative overflow-visible">
           <div 
             ref={containerRef}
-            className="flex space-x-2 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth pt-[3.5px] pb-[3.5px] -mx-4 px-4"
+            className="flex space-x-2 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth pt-[3.5px] pb-[3.5px] px-4"
             style={{
               msOverflowStyle: 'none',
               scrollbarWidth: 'none',
