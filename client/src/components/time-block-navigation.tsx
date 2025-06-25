@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeBlock } from "@shared/schema";
@@ -13,11 +13,17 @@ interface TimeBlockNavigationProps {
 
 export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: TimeBlockNavigationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasInitializedRef = useRef(false);
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
 
-  // Generate time blocks client-side
-  const timeBlocks = useMemo(() => generateTimeBlocks(), []);
+  // Generate time blocks client-side and filter based on settings
+  const timeBlocks = useMemo(() => {
+    const allBlocks = generateTimeBlocks();
+    return settings.showRecentBlocks 
+      ? allBlocks 
+      : allBlocks.filter(block => !block.isRecent);
+  }, [settings.showRecentBlocks]);
 
   // Auto-scroll to the rightmost position on load
   useEffect(() => {
@@ -29,10 +35,11 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
         }
       }, 100);
       
-      // Select the most recent block by default
-      if (!selectedBlock && timeBlocks.length > 0) {
+      // Select the most recent block by default (only on initial load)
+      if (!hasInitializedRef.current && !selectedBlock && timeBlocks.length > 0) {
         const mostRecentBlock = timeBlocks[timeBlocks.length - 1];
         onBlockSelect(mostRecentBlock);
+        hasInitializedRef.current = true;
       }
     }
   }, [timeBlocks, selectedBlock, onBlockSelect]);
@@ -87,14 +94,14 @@ export function TimeBlockNavigation({ selectedBlock, onBlockSelect, settings }: 
                   size="sm"
                   className={`
                     flex-shrink-0 px-3 py-2 h-auto border-2 text-xs font-medium transition-all hover:scale-105
-                    ${(block.isRecent && settings.showRecentBlocks)
+                    ${block.isRecent
                       ? 'bg-red-300 border-red-300 text-white hover:bg-red-400' 
                       : isSelected
                         ? 'bg-orange-500 border-orange-500 text-white'
                         : 'bg-white border-gray-300 text-gray-600 hover:border-orange-500 hover:text-orange-500'
                     }
-                    ${isSelected && !(block.isRecent && settings.showRecentBlocks) ? 'ring-2 ring-orange-300' : ''}
-                    ${isSelected && (block.isRecent && settings.showRecentBlocks) ? 'ring-2 ring-red-200' : ''}
+                    ${isSelected && !block.isRecent ? 'ring-2 ring-orange-300' : ''}
+                    ${isSelected && block.isRecent ? 'ring-2 ring-red-200' : ''}
                   `}
                   onClick={() => onBlockSelect(block)}
                 >
